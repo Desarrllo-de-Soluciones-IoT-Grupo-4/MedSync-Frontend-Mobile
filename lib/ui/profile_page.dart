@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:med_sync_app_movil/ui/daily_history_page.dart';
 import 'package:med_sync_app_movil/ui/emergency_contact_page.dart';
@@ -12,9 +14,9 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   String name = "Esteban Lórax";
   String lastName = "Fernández Pasco";
-  String address = "Avenida Siempreviva 777";
   String phone = "912345678";
-  String email = "estebfer777@gmail.com";
+  String disease = "arritmia";
+  double weight = 80.00;
 
 
   void _showEditProfileDialog() {
@@ -23,9 +25,9 @@ class _ProfilePageState extends State<ProfilePage> {
       builder: (BuildContext context) {
         TextEditingController nameController = TextEditingController(text: name);
         TextEditingController lastNameController = TextEditingController(text: lastName);
-        TextEditingController addressController = TextEditingController(text: address);
+        TextEditingController diseaseController = TextEditingController(text: disease);
         TextEditingController phoneController = TextEditingController(text: phone);
-        TextEditingController emailController = TextEditingController(text: email);
+        TextEditingController weightController = TextEditingController(text: weight.toString());
 
         return AlertDialog(
           title: Text("Editar Perfil"),
@@ -41,15 +43,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   decoration: InputDecoration(labelText: 'Apellido'),
                 ),
                 TextField(
-                  controller: addressController,
-                  decoration: InputDecoration(labelText: 'Dirección'),
+                  controller: diseaseController,
+                  decoration: InputDecoration(labelText: 'Enfermedad'),
                 ),
                 TextField(
                   controller: phoneController,
                   decoration: InputDecoration(labelText: 'Teléfono'),
                 ),
                 TextField(
-                  controller: emailController,
+                  controller: weightController,
                   decoration: InputDecoration(labelText: 'Correo electrónico'),
                 ),
               ],
@@ -62,9 +64,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 setState(() {
                   name = nameController.text;
                   lastName = lastNameController.text;
-                  address = addressController.text;
+                  disease = diseaseController.text;
                   phone = phoneController.text;
-                  email = emailController.text;
+                  weight = weightController.text as double;
                 });
                 Navigator.of(context).pop();
               },
@@ -105,15 +107,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 backgroundImage: AssetImage('assets/profile_picture.png'),
               ),
               SizedBox(height: 16),
-              Text(name, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text("Nombre: $name", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text(lastName, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+              Text("Apellidos: $lastName", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
               SizedBox(height: 8),
-              Text(address, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+              Text("Enfermedad: $disease", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
               SizedBox(height: 8),
-              Text(phone, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+              Text("Número de telefono: $phone", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
               SizedBox(height: 8),
-              Text(email, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+              Text("Peso: $weight".toString(), style: TextStyle(fontSize: 16, color: Colors.grey[700])),
               SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -192,4 +194,3 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
-
