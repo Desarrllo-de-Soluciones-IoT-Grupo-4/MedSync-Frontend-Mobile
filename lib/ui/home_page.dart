@@ -8,7 +8,9 @@ class HeartRateMonitorPage extends StatefulWidget {
 }
 
 class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
-  int bpm = 20;
+  int bpm = 35;
+  int maxFrecuency = 50;
+  int minFrecuency = 20;
   int _currentIndex = 0;
 
   Color getCircleColor(int bpm) {
@@ -106,6 +108,14 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
             Text(
               '$bpm bpm - ${bpm >= 60 && bpm <= 100 ? "Normal" : "Anormal"}',
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 5),
+            Text(
+              'Frecuencia mínima: $minFrecuency'.toString(),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),Text(
+              'Frecuencia máxima: $maxFrecuency'.toString(),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             SizedBox(height: 5),
             Text(
