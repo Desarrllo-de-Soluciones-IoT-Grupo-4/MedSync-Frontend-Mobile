@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:med_sync_app_movil/ui/create_account_page.dart';
 import 'package:med_sync_app_movil/ui/home_page.dart';
+import 'package:med_sync_app_movil/services/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final AuthService authService = AuthService();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,6 +28,7 @@ class LoginPage extends StatelessWidget {
               ),
               SizedBox(height: 32),
               TextField(
+                controller: emailController,
                 decoration: InputDecoration(
                   labelText: 'Email o Celular',
                   border: OutlineInputBorder(),
@@ -31,6 +36,7 @@ class LoginPage extends StatelessWidget {
               ),
               SizedBox(height: 16),
               TextField(
+                controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
@@ -41,8 +47,7 @@ class LoginPage extends StatelessWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {
-                  },
+                  onPressed: () {},
                   child: Text(
                     'Olvidé mi contraseña',
                     style: TextStyle(color: Colors.blue),
@@ -51,8 +56,22 @@ class LoginPage extends StatelessWidget {
               ),
               SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>HeartRateMonitorPage()));
+                onPressed: () async {
+                  try {
+                    final response = await authService.login(
+                      emailController.text,
+                      passwordController.text,
+                    );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => HeartRateMonitorPage()),
+                    );
+                  } catch (e) {
+                    // Muestra un error
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -69,11 +88,15 @@ class LoginPage extends StatelessWidget {
                   Text('¿No tienes una cuenta? '),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=> RegisterPage()));
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => RegisterPage()));
                     },
                     child: Text(
                       'Regístrate',
-                      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: Colors.blue, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],

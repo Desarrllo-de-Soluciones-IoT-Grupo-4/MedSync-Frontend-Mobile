@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:med_sync_app_movil/ui/login_page.dart';
+import 'package:med_sync_app_movil/services/auth_service.dart';
 import 'package:med_sync_app_movil/ui/success_page.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
+  @override
+  _RegisterPageState createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  // Controladores para cada campo de texto
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+
+  final AuthService authService = AuthService();
+
+  // Variable para almacenar el rol seleccionado
+  String selectedRole = 'CARER'; // Valor por defecto
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,27 +41,23 @@ class RegisterPage extends StatelessWidget {
               ),
               SizedBox(height: 25),
               TextField(
+                controller: nameController,
                 decoration: InputDecoration(
-                  labelText: 'Nombre completo',
+                  labelText: 'Nombre',
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 10),
               TextField(
+                controller: lastNameController,
                 decoration: InputDecoration(
-                  labelText: 'Apellido paterno',
+                  labelText: 'Apellido',
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 10),
               TextField(
-                decoration: InputDecoration(
-                  labelText: 'Apellido materno',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 10),
-              TextField(
+                controller: emailController,
                 decoration: InputDecoration(
                   labelText: 'Correo electrónico',
                   border: OutlineInputBorder(),
@@ -51,6 +65,7 @@ class RegisterPage extends StatelessWidget {
               ),
               SizedBox(height: 10),
               TextField(
+                controller: passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: 'Contraseña',
@@ -59,6 +74,7 @@ class RegisterPage extends StatelessWidget {
               ),
               SizedBox(height: 10),
               TextField(
+                controller: addressController,
                 decoration: InputDecoration(
                   labelText: 'Dirección',
                   border: OutlineInputBorder(),
@@ -66,15 +82,58 @@ class RegisterPage extends StatelessWidget {
               ),
               SizedBox(height: 10),
               TextField(
+                controller: phoneController,
                 decoration: InputDecoration(
-                  labelText: 'Número de celular',
+                  labelText: 'Número de teléfono',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 10),
+              // Dropdown para seleccionar el rol
+              DropdownButtonFormField<String>(
+                value: selectedRole,
+                items: [
+                  DropdownMenuItem(
+                    value: 'CARER',
+                    child: Text('CARER'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'PATIENT',
+                    child: Text('PATIENT'),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedRole = value!;
+                  });
+                },
+                decoration: InputDecoration(
+                  labelText: 'Selecciona tu rol',
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=> SuccessPage()));
+                onPressed: () async {
+                  try {
+                    // Llamada al método register con todos los datos, incluyendo "role"
+                    await authService.register({
+                      'name': nameController.text,
+                      'lastname': lastNameController.text,
+                      'email': emailController.text,
+                      'password': passwordController.text,
+                      'role': selectedRole, // Usa el rol seleccionado
+                    });
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SuccessPage()),
+                    );
+                  } catch (e) {
+                    print('Error en el registro: $e');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16),
@@ -83,38 +142,6 @@ class RegisterPage extends StatelessWidget {
                   ),
                 ),
                 child: Text('Registrarse', style: TextStyle(fontSize: 18)),
-              ),
-              SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('¿Ya tienes una cuenta? '),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=> LoginPage()));
-                    },
-                    child: Text(
-                      'Inicia sesión',
-                      style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 48),
-              Align(
-                alignment: Alignment.center,
-                child: Column(
-                  children: [
-                    Text(
-                      'with <3 from',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    Image.asset(
-                      'assets/upc_logo.png',
-                      height: 40,
-                    ),
-                  ],
-                ),
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:med_sync_app_movil/ui/daily_history_page.dart';
 import 'package:med_sync_app_movil/ui/profile_page.dart';
 
@@ -12,6 +13,21 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
   int maxFrecuency = 50;
   int minFrecuency = 20;
   int _currentIndex = 0;
+  String userName = "Usuario"; // Valor por defecto
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName(); // Cargar el nombre del usuario al iniciar
+  }
+
+  // Método para cargar el nombre del usuario desde SharedPreferences
+  Future<void> _loadUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userName = prefs.getString('userName') ?? "Usuario";
+    });
+  }
 
   Color getCircleColor(int bpm) {
     if (bpm <= 59 || bpm >= 181) {
@@ -22,7 +38,6 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
       return Colors.grey;
     }
   }
-  
 
   void onTabTapped(int index) {
     setState(() {
@@ -58,7 +73,7 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
               height: 30,
             ),
             SizedBox(width: 8),
-            Text('¡Hola, Esteban!'),
+            Text('¡Hola, $userName!'), // Muestra el nombre del usuario
           ],
         ),
         backgroundColor: Colors.cyan,
@@ -111,10 +126,11 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
             ),
             SizedBox(height: 5),
             Text(
-              'Frecuencia mínima: $minFrecuency'.toString(),
+              'Frecuencia mínima: $minFrecuency',
               style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),Text(
-              'Frecuencia máxima: $maxFrecuency'.toString(),
+            ),
+            Text(
+              'Frecuencia máxima: $maxFrecuency',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             SizedBox(height: 5),
