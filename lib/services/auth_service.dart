@@ -4,7 +4,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'dart:convert';
 
 class AuthService {
-  final String baseUrl = 'http://192.168.56.1:8080/api/v1';
+  final String baseUrl = 'https://medsync-api.up.railway.app/api/v1';
 
   // Método para iniciar sesión
   Future<void> login(String email, String password) async {

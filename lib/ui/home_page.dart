@@ -88,7 +88,7 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
   }
 
   Future<void> _fetchMetricsData() async {
-    final url = Uri.parse('http://192.168.56.1:8080/api/v1/metrics?patientId=$patientId');
+    final url = Uri.parse('https://medsync-api.up.railway.app/api/v1/metrics?patientId=$patientId');
 
     try {
       final response = await http.get(

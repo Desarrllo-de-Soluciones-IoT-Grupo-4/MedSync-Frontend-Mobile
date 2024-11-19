@@ -48,7 +48,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Método para obtener los datos del paciente desde la API usando el token y el id
   Future<void> _fetchPatientData() async {
-    final url = Uri.parse('http://192.168.56.1:8080/api/v1/patients/$userId');
+    final url = Uri.parse('https://medsync-api.up.railway.app/api/v1/patients/$userId');
 
     try {
       final response = await http.get(
