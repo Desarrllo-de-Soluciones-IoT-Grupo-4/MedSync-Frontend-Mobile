@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:med_sync_app_movil/ui/daily_history_page.dart';
-import 'package:med_sync_app_movil/ui/home_page.dart';
+import 'package:med_sync_app_movil/ui/home_carer_page.dart';
 import 'package:med_sync_app_movil/ui/login_page.dart';
 
 class ProfilePageCarer extends StatefulWidget {
@@ -106,7 +106,7 @@ class _ProfilePageState extends State<ProfilePageCarer> {
           if (index == 0) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => HeartRateMonitorPage()),
+              MaterialPageRoute(builder: (context) => PatientInfoPage()),
             );
           } else if (index == 1) {
             Navigator.push(
