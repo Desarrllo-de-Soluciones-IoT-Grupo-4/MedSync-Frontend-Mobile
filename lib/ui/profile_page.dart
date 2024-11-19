@@ -1,6 +1,8 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import 'package:med_sync_app_movil/ui/daily_history_page.dart';
 import 'package:med_sync_app_movil/ui/emergency_contact_page.dart';
 import 'package:med_sync_app_movil/ui/home_page.dart';
@@ -12,23 +14,108 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String name = "Esteban Lórax";
-  String lastName = "Fernández Pasco";
-  String phone = "912345678";
-  String disease = "arritmia";
-  double weight = 80.00;
+  String name = "";
+  String lastName = "";
+  String phoneNumber = "";
+  String disease = "";
+  double weight = 0.0;
+  String token = ""; // Variable para almacenar el token
+  int userId = 0; // Variable para almacenar el id del usuario
 
+  @override
+  void initState() {
+    super.initState();
+    _loadTokenAndUserId();
+  }
+
+  // Cargar el token y el id del usuario desde SharedPreferences y obtener los datos del paciente
+  Future<void> _loadTokenAndUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String savedToken = prefs.getString('authToken') ?? "";
+    int savedUserId = prefs.getInt('userId') ?? 0;
+
+    setState(() {
+      token = savedToken;
+      userId = savedUserId;
+    });
+
+    if (token.isNotEmpty && userId != 0) {
+      await _fetchPatientData();
+    } else {
+      print('Token o id de usuario no encontrado en SharedPreferences');
+    }
+  }
+
+  // Método para obtener los datos del paciente desde la API usando el token y el id
+  Future<void> _fetchPatientData() async {
+    final url = Uri.parse('http://192.168.56.1:8080/api/v1/patients/$userId');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token', // Usar el token en el encabezado
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          name = data['name'] ?? "";
+          lastName = data['lastName'] ?? "";
+          phoneNumber = data['phoneNumber'] ?? "";
+          disease = data['disease'] ?? "";
+          weight = (data['weight'] ?? 0).toDouble();
+        });
+      } else {
+        print('Error al obtener los datos del paciente: ${response.body}');
+      }
+    } catch (e) {
+      print('Error en la solicitud: $e');
+    }
+  }
+
+  // Método para actualizar los datos del paciente en el backend usando una solicitud PUT
+  Future<void> _updatePatientData() async {
+    final url = Uri.parse('http://192.168.56.1:8080/api/v1/patients/$userId');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'name': name,
+          'lastName': lastName,
+          'phoneNumber': phoneNumber,
+          'disease': disease,
+          'weight': weight,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Datos actualizados correctamente');
+      } else {
+        print('Error al actualizar los datos: ${response.body}');
+      }
+    } catch (e) {
+      print('Error en la solicitud PUT: $e');
+    }
+  }
 
   void _showEditProfileDialog() {
+    TextEditingController nameController = TextEditingController(text: name);
+    TextEditingController lastNameController = TextEditingController(text: lastName);
+    TextEditingController phoneNumberController = TextEditingController(text: phoneNumber);
+    TextEditingController diseaseController = TextEditingController(text: disease);
+    TextEditingController weightController = TextEditingController(text: weight.toString());
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        TextEditingController nameController = TextEditingController(text: name);
-        TextEditingController lastNameController = TextEditingController(text: lastName);
-        TextEditingController diseaseController = TextEditingController(text: disease);
-        TextEditingController phoneController = TextEditingController(text: phone);
-        TextEditingController weightController = TextEditingController(text: weight.toString());
-
         return AlertDialog(
           title: Text("Editar Perfil"),
           content: SingleChildScrollView(
@@ -43,16 +130,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   decoration: InputDecoration(labelText: 'Apellido'),
                 ),
                 TextField(
+                  controller: phoneNumberController,
+                  decoration: InputDecoration(labelText: 'Teléfono'),
+                ),
+                TextField(
                   controller: diseaseController,
                   decoration: InputDecoration(labelText: 'Enfermedad'),
                 ),
                 TextField(
-                  controller: phoneController,
-                  decoration: InputDecoration(labelText: 'Teléfono'),
-                ),
-                TextField(
                   controller: weightController,
-                  decoration: InputDecoration(labelText: 'Correo electrónico'),
+                  decoration: InputDecoration(labelText: 'Peso'),
+                  keyboardType: TextInputType.number,
                 ),
               ],
             ),
@@ -64,10 +152,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 setState(() {
                   name = nameController.text;
                   lastName = lastNameController.text;
+                  phoneNumber = phoneNumberController.text;
                   disease = diseaseController.text;
-                  phone = phoneController.text;
-                  weight = weightController.text as double;
+                  weight = double.tryParse(weightController.text) ?? weight;
                 });
+
+                _updatePatientData(); // Llama al método para actualizar los datos en el backend
                 Navigator.of(context).pop();
               },
             ),
@@ -89,11 +179,14 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (context)=>HeartRateMonitorPage()));
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => HeartRateMonitorPage()),
+            );
           },
         ),
-        title: Text("¡Hola, Esteban!"),
+        title: Text("¡Hola, $name!"),
         backgroundColor: Colors.cyan,
       ),
       body: Center(
@@ -111,11 +204,11 @@ class _ProfilePageState extends State<ProfilePage> {
               SizedBox(height: 8),
               Text("Apellidos: $lastName", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
               SizedBox(height: 8),
+              Text("Teléfono: $phoneNumber", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+              SizedBox(height: 8),
               Text("Enfermedad: $disease", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
               SizedBox(height: 8),
-              Text("Número de telefono: $phone", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-              SizedBox(height: 8),
-              Text("Peso: $weight".toString(), style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+              Text("Peso: $weight kg", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
               SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -130,7 +223,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   SizedBox(width: 10),
                   ElevatedButton(
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>EmergencyContactPage()));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => EmergencyContactPage()));
                     },
                     child: Text("Contacto Emergencia"),
                     style: ElevatedButton.styleFrom(
@@ -141,8 +234,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: (){
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>LoginPage()));
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
                 },
                 child: Text("Cerrar sesión"),
                 style: ElevatedButton.styleFrom(
@@ -190,7 +283,6 @@ class _ProfilePageState extends State<ProfilePage> {
         selectedItemColor: Colors.cyan,
         unselectedItemColor: Colors.grey,
       ),
-
     );
   }
 }

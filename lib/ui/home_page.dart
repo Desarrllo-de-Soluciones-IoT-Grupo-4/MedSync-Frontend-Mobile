@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:async'; // Importar para usar Timer
+
+import 'package:intl/intl.dart'; // Importar para formatear la fecha
 import 'package:med_sync_app_movil/ui/daily_history_page.dart';
 import 'package:med_sync_app_movil/ui/profile_page.dart';
 
@@ -9,24 +14,113 @@ class HeartRateMonitorPage extends StatefulWidget {
 }
 
 class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
-  int bpm = 35;
-  int maxFrecuency = 50;
-  int minFrecuency = 20;
-  int _currentIndex = 0;
+  int bpm = 0;
+  int maxFrequency = 0;
+  int minFrequency = 0;
+  String lastModifiedDate = "";
+  String token = "";
+  int patientId = 0;
   String userName = "Usuario"; // Valor por defecto
+  int _currentIndex = 0;
+  Timer? timer;
 
   @override
   void initState() {
     super.initState();
-    _loadUserName(); // Cargar el nombre del usuario al iniciar
+    _loadTokenAndPatientId();
+    _startTimer();
   }
 
-  // Método para cargar el nombre del usuario desde SharedPreferences
-  Future<void> _loadUserName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      userName = prefs.getString('userName') ?? "Usuario";
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    timer = Timer.periodic(Duration(seconds: 10), (Timer t) {
+      _fetchMetricsData();
     });
+  }
+
+  Future<void> _loadTokenAndPatientId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String savedToken = prefs.getString('authToken') ?? "";
+    int savedPatientId = prefs.getInt('userId') ?? 0;
+
+    setState(() {
+      token = savedToken;
+      patientId = savedPatientId;
+    });
+
+    if (token.isNotEmpty && patientId != 0) {
+      await _fetchPatientName(); // Obtener el nombre del usuario desde la API
+      await _fetchMetricsData();
+    } else {
+      print('Token o id de paciente no encontrado en SharedPreferences');
+    }
+  }
+
+  // Método para obtener el nombre del usuario desde la API
+  Future<void> _fetchPatientName() async {
+    final url = Uri.parse('http://192.168.56.1:8080/api/v1/patients/$patientId');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          userName = data['name'] ?? "Usuario"; // Actualizar el nombre del usuario
+        });
+      } else {
+        print('Error al obtener el nombre del paciente: ${response.body}');
+      }
+    } catch (e) {
+      print('Error en la solicitud: $e');
+    }
+  }
+
+  Future<void> _fetchMetricsData() async {
+    final url = Uri.parse('http://192.168.56.1:8080/api/v1/metrics?patientId=$patientId');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+
+        if (data.isNotEmpty) {
+          final metric = data[0];
+          setState(() {
+            bpm = (metric['average'] ?? 0).toInt();
+            maxFrequency = (metric['maxFrequency'] ?? 0).toInt();
+            minFrequency = (metric['minFrequency'] ?? 0).toInt();
+
+            // Formatear lastModifiedDate a fecha legible
+            double lastModifiedTimestamp = (metric['patient']['lastModifiedDate'] ?? 0).toDouble();
+            DateTime date = DateTime.fromMillisecondsSinceEpoch((lastModifiedTimestamp * 1000).toInt());
+            lastModifiedDate = DateFormat('dd/MM/yyyy HH:mm').format(date);
+          });
+        }
+      } else {
+        print('Error al obtener los datos de métricas: ${response.body}');
+      }
+    } catch (e) {
+      print('Error en la solicitud: $e');
+    }
   }
 
   Color getCircleColor(int bpm) {
@@ -40,6 +134,8 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
   }
 
   void onTabTapped(int index) {
+    if (index == _currentIndex) return;
+
     setState(() {
       _currentIndex = index;
     });
@@ -66,16 +162,7 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/medsync_logo.png',
-              height: 30,
-            ),
-            SizedBox(width: 8),
-            Text('¡Hola, $userName!'), // Muestra el nombre del usuario
-          ],
-        ),
+        title: Text('¡Hola, $userName!'), // Mostrar el nombre del usuario obtenido de la API
         backgroundColor: Colors.cyan,
       ),
       body: Center(
@@ -115,27 +202,17 @@ class _HeartRateMonitorPageState extends State<HeartRateMonitorPage> {
               ),
             ),
             SizedBox(height: 20),
-            Image.asset(
-              'assets/grafico.png',
-              height: 150,
+            Text(
+              'Frecuencia mínima: $minFrequency',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            Text(
+              'Frecuencia máxima: $maxFrequency',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             SizedBox(height: 10),
             Text(
-              '$bpm bpm - ${bpm >= 60 && bpm <= 100 ? "Normal" : "Anormal"}',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            SizedBox(height: 5),
-            Text(
-              'Frecuencia mínima: $minFrecuency',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            Text(
-              'Frecuencia máxima: $maxFrecuency',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            SizedBox(height: 5),
-            Text(
-              'Última medida: 25/09/2024 21:02',
+              'Última medida: $lastModifiedDate',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],

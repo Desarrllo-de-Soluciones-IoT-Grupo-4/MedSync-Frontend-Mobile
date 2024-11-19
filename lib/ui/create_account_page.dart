@@ -13,13 +13,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
+  String selectedRole = 'CARER'; // Por defecto es "CARER"
 
   final AuthService authService = AuthService();
-
-  // Variable para almacenar el rol seleccionado
-  String selectedRole = 'CARER'; // Valor por defecto
 
   @override
   Widget build(BuildContext context) {
@@ -73,22 +69,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               SizedBox(height: 10),
-              TextField(
-                controller: addressController,
-                decoration: InputDecoration(
-                  labelText: 'Dirección',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 10),
-              TextField(
-                controller: phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Número de teléfono',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 10),
               // Dropdown para seleccionar el rol
               DropdownButtonFormField<String>(
                 value: selectedRole,
@@ -116,14 +96,14 @@ class _RegisterPageState extends State<RegisterPage> {
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    // Llamada al método register con todos los datos, incluyendo "role"
-                    await authService.register({
-                      'name': nameController.text,
-                      'lastname': lastNameController.text,
-                      'email': emailController.text,
-                      'password': passwordController.text,
-                      'role': selectedRole, // Usa el rol seleccionado
-                    });
+                    // Llamada al método register con argumentos posicionales
+                    await authService.register(
+                      nameController.text,
+                      lastNameController.text,
+                      emailController.text,
+                      passwordController.text,
+                      selectedRole,
+                    );
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => SuccessPage()),
